@@ -12,6 +12,7 @@ const Navbar = () => {
     { label: 'Dashboard', to: '/' },
     { label: 'Courses', to: '/courses' },
     { label: 'Classroom', to: '/classroom' },
+    { label: 'Live', to: '/live' },
     { label: 'Library', to: '/library' },
     { label: 'Resources', to: '/resources' },
   ];

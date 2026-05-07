@@ -14,6 +14,7 @@ import { setOnAuthFailure } from './modules/http';
 import { resolveExpiryMs } from './modules/auth/tokenStorage';
 
 const Classroom = lazy(() => import('./pages/Classroom'));
+const Live = lazy(() => import('./pages/Live'));
 
 const RouteLoading = ({ label }) => (
   <div className="min-h-[70vh] bg-blue-50 flex items-center justify-center px-6">
@@ -118,6 +119,22 @@ const App = () => {
               />
               <Route path="/library" element={<Library />} />
               <Route path="/resources" element={<Resources />} />
+              <Route
+                path="/live"
+                element={
+                  <Suspense fallback={<RouteLoading label="Live" />}>
+                    <Live />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/live/:roomId"
+                element={
+                  <Suspense fallback={<RouteLoading label="Live" />}>
+                    <Live />
+                  </Suspense>
+                }
+              />
             </Route>
           </Route>
         </Route>
