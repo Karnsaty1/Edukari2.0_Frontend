@@ -21,7 +21,8 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import StopIcon from '@mui/icons-material/Stop';
-import { searchRooms, createRoom, goLive, endLive, joinRoom } from '../modules/live/liveApi';
+import { searchRooms, createRoom, goLive, endLive, joinRoom, getParticipantCounts } from '../modules/live/liveApi';
+import { createLiveRoomSchema, sendLiveMessageSchema } from '../modules/live/liveValidation';
 import { useLiveRoom } from '../modules/live/hooks/useLiveRoom';
 import { useAuth } from '../modules/auth';
 import type { LiveRoom } from '../types/live';
@@ -49,7 +50,7 @@ const StatusBadge = ({ status }: { status: LiveRoom['status'] }) => {
   );
 };
 
-const RoomCard = ({ room, onJoin }: { room: LiveRoom; onJoin: (room: LiveRoom) => void }) => (
+const RoomCard = ({ room, activeCounts, onJoin }: { room: LiveRoom; activeCounts?: number; onJoin: (room: LiveRoom) => void }) => (
   <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-3 border border-gray-100">
     <div className="flex items-start justify-between gap-2">
       <h3 className="font-semibold text-gray-900 text-base leading-snug">{room.title}</h3>
@@ -59,7 +60,10 @@ const RoomCard = ({ room, onJoin }: { room: LiveRoom; onJoin: (room: LiveRoom) =
     <div className="flex items-center gap-3 text-xs text-gray-400 mt-auto">
       <span className="flex items-center gap-1">
         <PeopleIcon style={{ fontSize: 14 }} />
-        {room.maxAttendees ?? '∞'}
+        {room.status === 'live'
+          ? <>{activeCounts ?? '...'} <span className="text-red-400 font-medium">live</span></>
+          : room.maxAttendees ?? '∞'
+        }
       </span>
       {room.scheduledStartAt && (
         <span>{new Date(room.scheduledStartAt).toLocaleString()}</span>
@@ -92,20 +96,33 @@ const CreateRoomModal = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
-    setLoading(true);
+    setFieldErrors({});
     setError(null);
+
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim() || undefined,
+      scheduledStartAt: form.scheduledStartAt || undefined,
+      maxAttendees: Number(form.maxAttendees) || 300,
+      isPublic: form.isPublic,
+    };
+
     try {
-      const room = await createRoom({
-        title: form.title.trim(),
-        description: form.description.trim() || undefined,
-        scheduledStartAt: form.scheduledStartAt || undefined,
-        maxAttendees: Number(form.maxAttendees) || 300,
-        isPublic: form.isPublic,
-      });
+      await createLiveRoomSchema.validate(payload, { abortEarly: false });
+    } catch (err: any) {
+      const errors: Record<string, string> = {};
+      err.inner?.forEach((e: any) => { if (e.path) errors[e.path] = e.message; });
+      setFieldErrors(errors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const room = await createRoom(payload);
       onCreated(room);
     } catch (e: any) {
       setError(e?.message || 'Failed to create room');
@@ -132,8 +149,11 @@ const CreateRoomModal = ({
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. React Hooks Deep Dive"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+              className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 ${
+                fieldErrors.title ? 'border-red-400' : 'border-gray-200'
+              }`}
             />
+            {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
           </div>
 
           <div>
@@ -154,18 +174,25 @@ const CreateRoomModal = ({
                 type="datetime-local"
                 value={form.scheduledStartAt}
                 onChange={(e) => setForm((f) => ({ ...f, scheduledStartAt: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 ${
+                  fieldErrors.scheduledStartAt ? 'border-red-400' : 'border-gray-200'
+                }`}
               />
+              {fieldErrors.scheduledStartAt && <p className="text-xs text-red-500 mt-1">{fieldErrors.scheduledStartAt}</p>}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">Max Attendees</label>
               <input
                 type="number"
                 min={1}
+                max={10000}
                 value={form.maxAttendees}
                 onChange={(e) => setForm((f) => ({ ...f, maxAttendees: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 ${
+                  fieldErrors.maxAttendees ? 'border-red-400' : 'border-gray-200'
+                }`}
               />
+              {fieldErrors.maxAttendees && <p className="text-xs text-red-500 mt-1">{fieldErrors.maxAttendees}</p>}
             </div>
           </div>
 
@@ -241,6 +268,7 @@ const CallUI = ({
   const [camOn, setCamOn] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [text, setText] = useState('');
+  const [chatError, setChatError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // All camera + screen share tracks from all participants
@@ -267,10 +295,16 @@ const CallUI = ({
     setSharing((v) => !v);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!text.trim()) return;
-    onChat(text.trim());
-    setText('');
+    try {
+      await sendLiveMessageSchema.validate({ text: text.trim() });
+      setChatError(null);
+      onChat(text.trim());
+      setText('');
+    } catch (err: any) {
+      setChatError(err.message);
+    }
   };
 
   return (
@@ -445,20 +479,24 @@ const CallUI = ({
           ))}
           <div ref={messagesEndRef} />
         </div>
-        <div className="px-3 py-3 border-t border-gray-800 flex gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Send a message..."
-            className="flex-1 text-sm bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-500"
-          />
-          <button
-            onClick={handleSend}
-            className="h-9 w-9 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-          >
-            <SendIcon fontSize="small" />
-          </button>
+        <div className="px-3 py-3 border-t border-gray-800 flex flex-col gap-1">
+          {chatError && <p className="text-xs text-red-400 px-1">{chatError}</p>}
+          <div className="flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => { setText(e.target.value); if (chatError) setChatError(null); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Send a message..."
+              maxLength={1000}
+              className="flex-1 text-sm bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-500"
+            />
+            <button
+              onClick={handleSend}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+            >
+              <SendIcon fontSize="small" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -614,6 +652,7 @@ const Live = () => {
   const [q, setQ] = useState('');
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
 
   const displayName: string = profile?.firstname
     ? `${profile.firstname} ${profile.lastname || ''}`.trim()
@@ -624,6 +663,19 @@ const Live = () => {
     try {
       const res = await searchRooms({ q: search || undefined, pageSize: 20 });
       setRooms(res.items);
+      // Fetch active counts for live rooms in parallel
+      const liveRooms = res.items.filter((r) => r.status === 'live');
+      if (liveRooms.length > 0) {
+        const counts = await Promise.allSettled(
+          liveRooms.map((r) => getParticipantCounts(r.id))
+        );
+        const map: Record<string, number> = {};
+        liveRooms.forEach((r, i) => {
+          const result = counts[i];
+          if (result.status === 'fulfilled') map[r.id] = result.value.active;
+        });
+        setLiveCounts(map);
+      }
     } catch {
       setRooms([]);
     } finally {
@@ -705,7 +757,7 @@ const Live = () => {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {rooms.map((room) => (
-            <RoomCard key={room.id} room={room} onJoin={(r) => setActiveRoomId(r.id)} />
+            <RoomCard key={room.id} room={room} activeCounts={liveCounts[room.id]} onJoin={(r) => setActiveRoomId(r.id)} />
           ))}
         </div>
       )}

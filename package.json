@@ -26,7 +26,8 @@
     "recoil": "^0.7.7",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.1.17",
-    "tldraw": "^4.5.9"
+    "tldraw": "^4.5.9",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
