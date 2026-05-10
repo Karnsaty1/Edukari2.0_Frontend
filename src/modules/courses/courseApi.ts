@@ -46,7 +46,7 @@ export const getMyProgressForCourse = async (courseId) => {
 };
 
 export const getMyCourseProgress = async (courseId) => {
-  return get(`/progress/me/course/${courseIdOf(courseId)}`);
+  return get(`/progress/me/${courseIdOf(courseId)}`);
 };
 
 export const attemptMyProgress = async (courseId, payload) => {
