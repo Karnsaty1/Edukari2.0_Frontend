@@ -31,7 +31,7 @@ const Courses = () => {
         if (!active) return;
         setItems([]);
         setMeta({ page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false });
-        setError('Courses are not available yet. The page is ready for the backend contract.');
+        setError('No courses available right now. Please check back later.');
       } finally {
         if (active) setLoading(false);
       }
@@ -84,7 +84,7 @@ const Courses = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <SignalCellularAltIcon fontSize="small" />
-                            <span>{track.officialSite || 'Official site not added yet'}</span>
+                            <span>{track.level || 'All levels'}</span>
                           </div>
                         </div>
                         <div className="mt-6 flex flex-wrap gap-3">

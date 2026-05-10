@@ -90,23 +90,11 @@ const BookDetail = () => {
               <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
                 <div className="text-sm font-semibold text-blue-900">Book Info</div>
                 <div className="mt-4 space-y-2 text-sm text-blue-700">
-                  <p><span className="font-semibold text-blue-900">Slug:</span> {book.slug}</p>
-                  <p><span className="font-semibold text-blue-900">Author:</span> {book.author}</p>
-                  <p><span className="font-semibold text-blue-900">Category:</span> {book.category}</p>
-                  <p><span className="font-semibold text-blue-900">Level:</span> {book.level}</p>
+                  {book.author && <p><span className="font-semibold text-blue-900">Author:</span> {book.author}</p>}
+                  {book.category && <p><span className="font-semibold text-blue-900">Category:</span> {book.category}</p>}
+                  {book.level && <p><span className="font-semibold text-blue-900">Level:</span> {book.level}</p>}
                 </div>
               </div>
-              {book.officialSite ? (
-                <a
-                  href={book.officialSite}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block rounded-3xl border border-blue-100 bg-white p-6 shadow-sm text-blue-900 hover:bg-blue-50 transition-colors"
-                >
-                  <div className="font-semibold">Open Official Site</div>
-                  <div className="mt-2 break-all text-sm text-blue-700">{book.officialSite}</div>
-                </a>
-              ) : null}
             </aside>
           </div>
         ) : null}

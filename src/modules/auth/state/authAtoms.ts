@@ -24,9 +24,31 @@ export const tokensAtom = atom({
   ],
 });
 
+const PROFILE_KEY = 'edukari_profile_v1';
+
+const readProfile = () => {
+  try {
+    const raw = sessionStorage.getItem(PROFILE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+
+const writeProfile = (profile: any) => {
+  try {
+    if (profile) sessionStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    else sessionStorage.removeItem(PROFILE_KEY);
+  } catch {}
+};
+
 export const profileAtom = atom({
   key: 'auth.profile',
-  default: null,
+  default: readProfile(),
+  effects_UNSTABLE: [
+    ({ onSet, setSelf }) => {
+      setSelf(readProfile());
+      onSet((newValue) => writeProfile(newValue));
+    },
+  ],
 });
 
 export const userSelector = selector({

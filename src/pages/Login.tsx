@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PageHero from '../components/PageHero';
 import { useAuth } from '../modules/auth';
 import { GoogleLogin } from '@react-oauth/google';
 
@@ -61,127 +60,121 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50">
-      <PageHero
-        kicker={mode === 'login' ? 'Login' : 'Create Account'}
-        title={mode === 'login' ? 'Welcome back' : 'Create your account'}
-        description={mode === 'login' ? 'Sign in with email and password.' : 'Create your Edukari account with your first and last name.'}
-        primaryAction={{ label: 'Go Dashboard', to: '/' }}
-        secondaryAction={{ label: 'Open Courses', to: '/courses' }}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 flex items-center justify-center px-4 py-12 relative overflow-hidden">
 
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="rounded-3xl border border-blue-100 bg-white p-8 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-blue-900">{mode === 'login' ? 'Login' : 'Sign Up'}</h2>
-              <p className="mt-2 text-blue-700">
-                {mode === 'login' ? 'Welcome back to Edukari.' : 'Create your account in a minute.'}
-              </p>
-            </div>
+      {/* Floating orbs */}
+      <div className="absolute top-[-80px] left-[-80px] w-72 h-72 rounded-full bg-blue-400/30 blur-3xl animate-orb-1 pointer-events-none" />
+      <div className="absolute bottom-[-60px] right-[-60px] w-96 h-96 rounded-full bg-indigo-500/25 blur-3xl animate-orb-2 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/3 w-56 h-56 rounded-full bg-yellow-300/10 blur-2xl animate-orb-3 pointer-events-none" />
+
+      <div className="w-full max-w-md relative z-10">
+
+        {/* Logo + tagline */}
+        <div className="text-center mb-8 animate-fade-in-up">
+          <div className="text-5xl font-bold text-white tracking-tight">
+            Edu<span className="text-yellow-300">kari</span>
+          </div>
+          <p className="mt-2 text-blue-100 text-sm">
+            {mode === 'login' ? 'Sign in to continue learning' : 'Start your learning journey'}
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 animate-fade-in-up-delay1">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-blue-900">{mode === 'login' ? 'Sign In' : 'Sign Up'}</h2>
             <button
               type="button"
-              onClick={() => {
-                setError('');
-                setMode((current) => (current === 'login' ? 'signup' : 'login'));
-              }}
+              onClick={() => { setError(''); setMode((m) => m === 'login' ? 'signup' : 'login'); }}
               className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-blue-100 transition-colors"
             >
               {mode === 'login' ? 'Need an account?' : 'Have an account?'}
             </button>
           </div>
 
-          {error ? (
-            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          {error && (
+            <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
               {error}
             </div>
-          ) : null}
+          )}
 
-          <form onSubmit={onPasswordLogin} className="mt-6">
-            <div className="grid gap-4">
-              {mode === 'signup' ? (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <label className="block">
-                    <div className="text-sm font-semibold text-blue-900">First name</div>
-                    <input
-                      value={firstname}
-                      onChange={(e) => setFirstname(e.target.value)}
-                      type="text"
-                      autoComplete="given-name"
-                      required={mode === 'signup'}
-                      className="mt-2 w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                      placeholder="Satyam"
-                    />
-                  </label>
+          <form onSubmit={onPasswordLogin} className="space-y-4">
+            {mode === 'signup' && (
+              <div className="grid sm:grid-cols-2 gap-4">
+                <label className="block">
+                  <div className="text-sm font-semibold text-blue-900 mb-1">First name</div>
+                  <input
+                    value={firstname}
+                    onChange={(e) => setFirstname(e.target.value)}
+                    type="text"
+                    autoComplete="given-name"
+                    required
+                    className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="First name"
+                  />
+                </label>
+                <label className="block">
+                  <div className="text-sm font-semibold text-blue-900 mb-1">Last name</div>
+                  <input
+                    value={lastname}
+                    onChange={(e) => setLastname(e.target.value)}
+                    type="text"
+                    autoComplete="family-name"
+                    required
+                    className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    placeholder="Last name"
+                  />
+                </label>
+              </div>
+            )}
 
-                  <label className="block">
-                    <div className="text-sm font-semibold text-blue-900">Last name</div>
-                    <input
-                      value={lastname}
-                      onChange={(e) => setLastname(e.target.value)}
-                      type="text"
-                      autoComplete="family-name"
-                      required={mode === 'signup'}
-                      className="mt-2 w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                      placeholder="Karn"
-                    />
-                  </label>
-                </div>
-              ) : null}
+            <label className="block">
+              <div className="text-sm font-semibold text-blue-900 mb-1">Email</div>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                autoComplete="email"
+                required
+                className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                placeholder="you@example.com"
+              />
+            </label>
 
-              <label className="block">
-                <div className="text-sm font-semibold text-blue-900">Email</div>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="mt-2 w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                  placeholder="you@example.com"
-                />
-              </label>
-
-              <label className="block">
-                <div className="text-sm font-semibold text-blue-900">Password</div>
-                <input
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="mt-2 w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                  placeholder="Your password"
-                />
-              </label>
-            </div>
+            <label className="block">
+              <div className="text-sm font-semibold text-blue-900 mb-1">Password</div>
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                autoComplete="current-password"
+                required
+                className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-blue-950 placeholder:text-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                placeholder="Your password"
+              />
+            </label>
 
             <button
               type="submit"
-              disabled={busy || !apiBase}
-              className="mt-5 w-full rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500 transition-colors disabled:opacity-60 disabled:hover:bg-blue-600"
+              disabled={busy}
+              className="w-full rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-500 transition-colors disabled:opacity-60 animate-pulse-glow"
             >
               {busy ? (mode === 'login' ? 'Signing in...' : 'Creating account...') : mode === 'login' ? 'Sign in' : 'Sign up'}
             </button>
-
-            {!apiBase ? (
-              <p className="mt-3 text-sm text-blue-700/90">Email/password auth will be enabled when the server is connected.</p>
-            ) : null}
           </form>
 
-          <div className="mt-8 flex items-center gap-4">
-            <div className="h-px flex-1 bg-blue-100"></div>
-            <div className="text-sm font-semibold text-blue-700">OR</div>
-            <div className="h-px flex-1 bg-blue-100"></div>
+          <div className="my-6 flex items-center gap-4">
+            <div className="h-px flex-1 bg-blue-100" />
+            <span className="text-sm font-semibold text-blue-400">OR</span>
+            <div className="h-px flex-1 bg-blue-100" />
           </div>
 
-          <div className="mt-6">
+          <div>
             {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
               <GoogleLogin
                 onSuccess={(res) => {
                   if (res?.credential) {
-                    api
-                      .loginWithGoogle({ credential: res.credential })
+                    api.loginWithGoogle({ credential: res.credential })
                       .then(() => navigate('/'))
                       .catch(() => setError('Google sign-in failed. Please try again.'));
                   }
@@ -193,17 +186,13 @@ const Login = () => {
                 shape="pill"
               />
             ) : (
-              <button
-                type="button"
-                disabled
-                className="w-full rounded-2xl border border-blue-100 bg-blue-50 px-5 py-3 font-semibold text-blue-900 opacity-70"
-              >
-                Continue with Google (not configured)
+              <button type="button" disabled className="w-full rounded-2xl border border-blue-100 bg-blue-50 px-5 py-3 font-semibold text-blue-400">
+                Continue with Google
               </button>
             )}
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

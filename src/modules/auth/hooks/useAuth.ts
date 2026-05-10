@@ -28,6 +28,8 @@ export const useAuth = () => {
 
   const loadProfile = async (accessToken) => {
     if (!accessToken) return null;
+    // Skip if already loaded in state (hydrated from sessionStorage)
+    if (profile) return profile;
     try {
       const me = await getMe({ accessToken });
       setProfile(me);

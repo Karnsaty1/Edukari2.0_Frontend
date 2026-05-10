@@ -1,40 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   LiveKitRoom,
   RoomAudioRenderer,
   useLocalParticipant,
   useTracks,
   VideoTrack,
-  useRoomContext,
+  useParticipants,
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
+import EmojiPicker, { Theme, EmojiClickData } from 'emoji-picker-react';
 import SendIcon from '@mui/icons-material/Send';
 import LogoutIcon from '@mui/icons-material/Logout';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import ThumbUpIcon from '@mui/icons-material/ThumbUp';
-import PanToolIcon from '@mui/icons-material/PanTool';
-import CelebrationIcon from '@mui/icons-material/Celebration';
 import SearchIcon from '@mui/icons-material/Search';
 import PeopleIcon from '@mui/icons-material/People';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import StopIcon from '@mui/icons-material/Stop';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ShareIcon from '@mui/icons-material/Share';
+import ChatIcon from '@mui/icons-material/Chat';
 import { searchRooms, createRoom, goLive, endLive, joinRoom, getParticipantCounts } from '../modules/live/liveApi';
 import { createLiveRoomSchema, sendLiveMessageSchema } from '../modules/live/liveValidation';
 import { useLiveRoom } from '../modules/live/hooks/useLiveRoom';
 import { useAuth } from '../modules/auth';
 import type { LiveRoom } from '../types/live';
-
-const REACTION_ICONS: Record<string, React.ReactNode> = {
-  like: <ThumbUpIcon fontSize="small" />,
-  clap: <CelebrationIcon fontSize="small" />,
-  heart: <FavoriteIcon fontSize="small" />,
-  hand: <PanToolIcon fontSize="small" />,
-  laugh: <span>😂</span>,
-  wow: <span>😮</span>,
-};
 
 const StatusBadge = ({ status }: { status: LiveRoom['status'] }) => {
   const styles: Record<string, string> = {
@@ -51,7 +51,7 @@ const StatusBadge = ({ status }: { status: LiveRoom['status'] }) => {
 };
 
 const RoomCard = ({ room, activeCounts, onJoin }: { room: LiveRoom; activeCounts?: number; onJoin: (room: LiveRoom) => void }) => (
-  <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-3 border border-gray-100">
+  <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-3 border border-gray-100 shimmer-card animate-fade-in-up">
     <div className="flex items-start justify-between gap-2">
       <h3 className="font-semibold text-gray-900 text-base leading-snug">{room.title}</h3>
       <StatusBadge status={room.status} />
@@ -230,11 +230,159 @@ const CreateRoomModal = ({
   );
 };
 
+// ── Device Settings Panel ─────────────────────────────────────────────────────
+const DeviceSettingsPanel = ({
+  onClose,
+  localParticipant,
+}: {
+  onClose: () => void;
+  localParticipant: any;
+}) => {
+  const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
+  const [cams, setCams] = useState<MediaDeviceInfo[]>([]);
+  const [selectedMic, setSelectedMic] = useState('');
+  const [selectedCam, setSelectedCam] = useState('');
+  const [volume, setVolume] = useState(0);
+  const animFrameRef = useRef<number>(0);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Enumerate devices
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      setMics(devices.filter((d) => d.kind === 'audioinput'));
+      setCams(devices.filter((d) => d.kind === 'videoinput'));
+    });
+  }, []);
+
+  // Mic volume meter using AudioContext
+  useEffect(() => {
+    let ctx: AudioContext;
+    const startMeter = async () => {
+      try {
+        const constraints: MediaStreamConstraints = {
+          audio: selectedMic ? { deviceId: { exact: selectedMic } } : true,
+          video: false,
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        streamRef.current = stream;
+        ctx = new AudioContext();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          analyser.getByteFrequencyData(data);
+          const avg = data.reduce((a, b) => a + b, 0) / data.length;
+          setVolume(Math.min(100, Math.round((avg / 128) * 100)));
+          animFrameRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch {}
+    };
+    startMeter();
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      ctx?.close();
+    };
+  }, [selectedMic]);
+
+  const applyMic = async () => {
+    if (selectedMic) await localParticipant.switchActiveDevice('audioinput', selectedMic);
+  };
+
+  const applyCam = async () => {
+    if (selectedCam) await localParticipant.switchActiveDevice('videoinput', selectedCam);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-sm p-5 shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-gray-900 font-semibold">Device Settings</span>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <CloseIcon style={{ fontSize: 18 }} />
+          </button>
+        </div>
+
+        {/* Microphone */}
+        <div className="mb-4">
+          <label className="text-xs text-gray-500 font-medium block mb-1.5">Microphone</label>
+          <select
+            value={selectedMic}
+            onChange={(e) => setSelectedMic(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-400"
+          >
+            <option value="">Default</option>
+            {mics.map((d) => (
+              <option key={d.deviceId} value={d.deviceId}>{d.label || `Mic ${d.deviceId.slice(0, 8)}`}</option>
+            ))}
+          </select>
+
+          {/* Volume meter */}
+          <div className="mt-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-400">Input level</span>
+              <span className="text-xs text-gray-400">{volume}%</span>
+            </div>
+            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-75 ${
+                  volume > 70 ? 'bg-red-500' : volume > 40 ? 'bg-yellow-400' : 'bg-green-500'
+                }`}
+                style={{ width: `${volume}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Speak to test your microphone</p>
+          </div>
+
+          <button
+            onClick={applyMic}
+            className="mt-2 text-xs text-blue-500 hover:text-blue-600 transition-colors"
+          >
+            Apply microphone
+          </button>
+        </div>
+
+        {/* Camera */}
+        <div className="mb-4">
+          <label className="text-xs text-gray-500 font-medium block mb-1.5">Camera</label>
+          <select
+            value={selectedCam}
+            onChange={(e) => setSelectedCam(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-400"
+          >
+            <option value="">Default</option>
+            {cams.map((d) => (
+              <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${d.deviceId.slice(0, 8)}`}</option>
+            ))}
+          </select>
+          <button
+            onClick={applyCam}
+            className="mt-2 text-xs text-blue-500 hover:text-blue-600 transition-colors"
+          >
+            Apply camera
+          </button>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ── Call UI (rendered inside LiveKitRoom context) ────────────────────────────
 const CallUI = ({
-  roomId,
   room,
-  session,
   messages,
   reactions,
   counts,
@@ -247,9 +395,7 @@ const CallUI = ({
   onChat,
   onReact,
 }: {
-  roomId: string;
   room: any;
-  session: any;
   messages: any[];
   reactions: any[];
   counts: { total: number; active: number; left: number };
@@ -260,21 +406,54 @@ const CallUI = ({
   onEndLive: () => void;
   onLeave: () => void;
   onChat: (text: string) => void;
-  onReact: (type: any) => void;
+  onReact: (emoji: string) => void;
 }) => {
-  const { localParticipant } = useLocalParticipant();
-  const lkRoom = useRoomContext();
+  const { localParticipant, isSpeaking } = useLocalParticipant();
+  const participants = useParticipants();
+
+  const [isMobile, setIsMobile] = useState(false);
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Check mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Sync showChat with isMobile after mount
+  useEffect(() => {
+    setShowChat(!isMobile);
+  }, [isMobile]);
+
+  const handleShare = () => {
+    if (!room?.slug) return;
+    const link = `${window.location.origin}/live/s/${room.slug}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
   const [text, setText] = useState('');
   const [chatError, setChatError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // All camera + screen share tracks from all participants
   const cameraTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
   const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false });
-  const allVideoTracks = [...screenTracks, ...cameraTracks];
+
+  // Screen share takes priority as dominant view
+  const dominantTrack = screenTracks[0] ?? cameraTracks[0] ?? null;
+  // Remaining camera tracks shown in strip
+  const stripTracks = dominantTrack
+    ? cameraTracks.filter((t) => t !== dominantTrack)
+    : cameraTracks.slice(1);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -308,60 +487,78 @@ const CallUI = ({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)] overflow-hidden bg-gray-950">
-      {/* Main video area */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] overflow-hidden bg-gray-100">
+      {showSettings && (
+        <DeviceSettingsPanel
+          onClose={() => setShowSettings(false)}
+          localParticipant={localParticipant}
+        />
+      )}
+
+      {/* ── Left: Video + Controls ── */}
+      <div className={`flex-1 flex flex-col overflow-hidden min-w-0 ${isMobile ? (showChat ? 'h-[65%]' : 'h-[90%]') : ''}`}>
 
         {/* Top bar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-gray-900/80 backdrop-blur-sm z-10">
+        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center gap-2">
             <StatusBadge status={room?.status ?? 'draft'} />
-            <span className="text-white font-medium text-sm truncate max-w-[160px]">{room?.title}</span>
+            <span className="text-gray-800 font-semibold text-sm truncate max-w-[200px]">{room?.title}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md">
-              <PeopleIcon style={{ fontSize: 13 }} className="text-gray-400" />
-              <span className="text-white text-xs font-medium">{counts.active}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-gray-100 px-2.5 py-1 rounded-lg">
+              <PeopleIcon style={{ fontSize: 14 }} className="text-gray-500" />
+              <span className="text-gray-700 text-xs font-medium">{counts.active}</span>
             </div>
             <button
-              onClick={onLeave}
-              title="Leave"
-              className="flex items-center gap-1 text-white/80 hover:text-white text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-md transition-colors"
+              onClick={handleShare}
+              title="Copy share link"
+              className="flex items-center gap-1 h-7 px-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-medium transition-colors"
             >
-              <LogoutIcon style={{ fontSize: 14 }} /> Leave
+              <ShareIcon style={{ fontSize: 13 }} />
+              {copied ? 'Copied!' : 'Share'}
             </button>
           </div>
         </div>
 
-        {/* Video grid */}
-        <div className="flex-1 overflow-hidden p-3">
-          {allVideoTracks.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center mx-auto mb-3">
-                  <PeopleIcon style={{ fontSize: 40 }} className="text-gray-400" />
+        {/* Main video area */}
+        <div className="flex-1 flex flex-col overflow-hidden p-2 gap-2 min-h-0">
+
+          {/* Dominant view */}
+          <div className="flex-1 relative rounded-xl md:rounded-2xl overflow-hidden bg-gray-800 min-h-[200px]">
+            {dominantTrack ? (
+              <>
+                <VideoTrack trackRef={dominantTrack} className="w-full h-full object-cover" />
+                <div className="absolute bottom-3 left-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+                  {dominantTrack.participant.name || dominantTrack.participant.identity}
+                  {screenTracks[0] === dominantTrack && ' 🖥️'}
                 </div>
-                <p className="text-gray-400 text-sm">
-                  {room?.status === 'live' ? 'No cameras on yet' : 'Waiting for host to go live...'}
-                </p>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full gap-3">
+                <div className="w-20 h-20 rounded-full bg-gray-600 flex items-center justify-center">
+                  <PeopleIcon style={{ fontSize: 36 }} className="text-gray-400" />
+                </div>
+                <p className="text-gray-400 text-sm">No video yet — turn on your camera to start</p>
               </div>
+            )}
+
+            {/* Floating reactions */}
+            <div className="absolute bottom-12 left-3 flex gap-1 pointer-events-none">
+              {reactions.map((r) => (
+                <span key={r.id} className="text-2xl animate-[floatUp_3s_ease-out_forwards]">
+                  {r.type}
+                </span>
+              ))}
             </div>
-          ) : allVideoTracks.length === 1 ? (
-            // Single participant — full screen
-            <div className="h-full rounded-xl overflow-hidden">
-              <VideoTrack trackRef={allVideoTracks[0]} className="w-full h-full object-cover" />
-            </div>
-          ) : (
-            // Grid layout
-            <div className={`grid h-full gap-2 ${
-              allVideoTracks.length === 2 ? 'grid-cols-2' :
-              allVideoTracks.length <= 4 ? 'grid-cols-2 grid-rows-2' :
-              'grid-cols-3'
-            }`}>
-              {allVideoTracks.map((track) => (
-                <div key={track.participant.sid} className="relative rounded-xl overflow-hidden bg-gray-800">
+          </div>
+
+          {/* Participant strip */}
+          {stripTracks.length > 0 && (
+            <div className="flex gap-2 h-20 md:h-28 overflow-x-auto">
+              {stripTracks.map((track) => (
+                <div key={track.participant.sid} className="relative flex-shrink-0 w-44 rounded-xl overflow-hidden bg-gray-700">
                   <VideoTrack trackRef={track} className="w-full h-full object-cover" />
-                  <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
+                  <div className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                     {track.participant.name || track.participant.identity}
                   </div>
                 </div>
@@ -370,134 +567,200 @@ const CallUI = ({
           )}
         </div>
 
-        {/* Floating reactions */}
-        <div className="absolute bottom-20 left-4 flex gap-1 pointer-events-none">
-          {reactions.map((r) => (
-            <span key={r.id} className="text-2xl animate-[floatUp_3s_ease-out_forwards]">
-              {r.type === 'like' ? '👍' : r.type === 'clap' ? '👏' : r.type === 'heart' ? '❤️' : r.type === 'hand' ? '✋' : r.type === 'laugh' ? '😂' : '😮'}
-            </span>
-          ))}
-        </div>
+        {/* ── Control bar ── */}
+        <div className="flex items-center justify-between px-4 py-2.5 bg-white border-t border-gray-200 shadow-sm">
 
-        {/* Bottom controls */}
-        <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-900/80 backdrop-blur-sm flex-wrap">
-          {/* Mic */}
-          <button
-            onClick={toggleMic}
-            title={micOn ? 'Mute' : 'Unmute'}
-            className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors text-sm ${
-              micOn ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-red-500 hover:bg-red-600 text-white'
-            }`}
-          >
-            {micOn ? '🎙️' : '🔇'}
-          </button>
-          {/* Camera */}
-          <button
-            onClick={toggleCam}
-            title={camOn ? 'Turn off camera' : 'Turn on camera'}
-            className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
-              camOn ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-red-500 hover:bg-red-600 text-white'
-            }`}
-          >
-            <VideocamIcon style={{ fontSize: 18 }} />
-          </button>
-          {/* Screen share */}
-          <button
-            onClick={toggleShare}
-            title={sharing ? 'Stop sharing' : 'Share screen'}
-            className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors text-sm ${
-              sharing ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
-            }`}
-          >
-            🖥️
-          </button>
-
-          <div className="w-px h-6 bg-gray-700 mx-1" />
-
-          {/* Reactions */}
-          {Object.entries(REACTION_ICONS).map(([type, icon]) => (
+          {/* Left: media controls */}
+          <div className="flex items-center gap-2">
             <button
-              key={type}
-              onClick={() => onReact(type as any)}
-              title={type}
-              className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+              onClick={toggleMic}
+              title={micOn ? 'Mute' : 'Unmute'}
+              className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-all ${
+                micOn
+                  ? isSpeaking
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                  : 'bg-red-500 hover:bg-red-600 text-white'
+              }`}
             >
-              {icon}
+              {micOn && isSpeaking && (
+                <span className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-50" />
+              )}
+              {micOn ? <MicIcon style={{ fontSize: 18 }} /> : <MicOffIcon style={{ fontSize: 18 }} />}
             </button>
-          ))}
 
-          {/* Host controls */}
-          {isHost && (
-            <>
-              <div className="w-px h-6 bg-gray-700 mx-1" />
-              {room?.status !== 'live' && room?.status !== 'ended' && (
-                <button
-                  onClick={onGoLive}
-                  disabled={hostLoading}
-                  title="Go Live"
-                  className="flex items-center gap-1 text-white text-xs bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 font-medium"
-                >
-                  <VideocamIcon style={{ fontSize: 14 }} />
-                  {hostLoading ? 'Starting...' : 'Go Live'}
-                </button>
-              )}
-              {room?.status === 'live' && (
-                <button
-                  onClick={onEndLive}
-                  disabled={hostLoading}
-                  title="End session"
-                  className="flex items-center gap-1 text-white text-xs bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 font-medium"
-                >
-                  <StopIcon style={{ fontSize: 14 }} />
-                  {hostLoading ? 'Ending...' : 'End Session'}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Chat Panel */}
-      <div className="w-full lg:w-80 xl:w-96 flex flex-col bg-gray-900 border-l border-gray-800">
-        <div className="px-4 py-3 border-b border-gray-800 font-semibold text-gray-200 text-sm flex items-center justify-between">
-          <span>Live Chat</span>
-          <span className="text-xs text-gray-500">
-            {isElevated ? `${counts.active} active · ${counts.total} total` : `${counts.active} watching`}
-          </span>
-        </div>
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-          {messages.length === 0 && (
-            <p className="text-center text-gray-500 text-sm mt-8">No messages yet. Say hi! 👋</p>
-          )}
-          {messages.map((m) => (
-            <div key={m.id} className={`flex flex-col gap-0.5 ${
-              m.kind === 'announcement' ? 'bg-blue-900/40 rounded-lg px-3 py-2 border border-blue-700/30' : ''
-            }`}>
-              <span className="text-xs font-semibold text-blue-400">{m.displayName}</span>
-              <span className="text-sm text-gray-200">{m.text}</span>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-        <div className="px-3 py-3 border-t border-gray-800 flex flex-col gap-1">
-          {chatError && <p className="text-xs text-red-400 px-1">{chatError}</p>}
-          <div className="flex gap-2">
-            <input
-              value={text}
-              onChange={(e) => { setText(e.target.value); if (chatError) setChatError(null); }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Send a message..."
-              maxLength={1000}
-              className="flex-1 text-sm bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-500"
-            />
             <button
-              onClick={handleSend}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              onClick={toggleCam}
+              title={camOn ? 'Stop Video' : 'Start Video'}
+              className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+                camOn ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-red-500 hover:bg-red-600 text-white'
+              }`}
             >
-              <SendIcon fontSize="small" />
+              {camOn ? <VideocamIcon style={{ fontSize: 18 }} /> : <VideocamOffIcon style={{ fontSize: 18 }} />}
+            </button>
+
+            <button
+              onClick={toggleShare}
+              title={sharing ? 'Stop Share' : 'Share Screen'}
+              className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+                sharing ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              }`}
+            >
+              {sharing ? <StopScreenShareIcon style={{ fontSize: 18 }} /> : <ScreenShareIcon style={{ fontSize: 18 }} />}
+            </button>
+
+            <button
+              onClick={() => setShowSettings(true)}
+              title="Device settings"
+              className="h-9 w-9 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+            >
+              <SettingsIcon style={{ fontSize: 16 }} />
+            </button>
+          </div>
+
+          {/* Center: reactions */}
+          <button
+            onClick={() => setShowReactions((v) => !v)}
+            title="React"
+            className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+              showReactions ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+            }`}
+          >
+            <EmojiEmotionsIcon style={{ fontSize: 18 }} />
+          </button>
+
+          {/* Right: host controls + leave */}
+          <div className="flex items-center gap-2">
+            {isHost && room?.status !== 'live' && room?.status !== 'ended' && (
+              <button
+                onClick={onGoLive}
+                disabled={hostLoading}
+                title="Go Live"
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+              >
+                <PlayArrowIcon style={{ fontSize: 18 }} />
+              </button>
+            )}
+            {isHost && room?.status === 'live' && (
+              <button
+                onClick={onEndLive}
+                disabled={hostLoading}
+                title="End Session"
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-colors disabled:opacity-50"
+              >
+                <StopIcon style={{ fontSize: 18 }} />
+              </button>
+            )}
+            <button
+              onClick={onLeave}
+              title="Leave"
+              className="h-9 w-9 rounded-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white transition-colors"
+            >
+              <LogoutIcon style={{ fontSize: 18 }} />
             </button>
           </div>
         </div>
+
+        {/* Emoji picker — floats above control bar */}
+        {showReactions && (
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 shadow-2xl">
+            <EmojiPicker
+              theme={Theme.LIGHT}
+              onEmojiClick={(data: EmojiClickData) => {
+                onReact(data.emoji);
+                setShowReactions(false);
+              }}
+              height={380}
+              width={320}
+            />
+          </div>
+        )}
+
+        {/* Mobile: Chat always visible below video, no toggle button needed */}
+      </div>
+
+      {/* ── Right: Chat panel ── */}
+      <div className={`${isMobile ? `flex flex-col ${showChat ? 'h-[35%]' : 'h-[10%]'}` : 'relative flex'}`}>
+        {!isMobile && (
+          <button
+            onClick={() => setShowChat((v) => !v)}
+            className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-5 h-12 bg-white hover:bg-gray-50 rounded-l-lg border border-gray-200 border-r-0 transition-colors shadow-sm"
+            title={showChat ? 'Collapse chat' : 'Expand chat'}
+          >
+            <ChevronRightIcon
+              style={{ fontSize: 16 }}
+              className={`text-gray-400 transition-transform ${showChat ? '' : 'rotate-180'}`}
+            />
+          </button>
+        )}
+
+        {/* Mobile: collapsible chat header */}
+        {isMobile && (
+          <button
+            onClick={() => setShowChat((v) => !v)}
+            className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-gray-800 font-semibold text-sm">Live Chat</span>
+              <span className="text-xs text-gray-400">{counts.active} watching</span>
+            </div>
+            <ChevronRightIcon
+              style={{ fontSize: 16 }}
+              className={`text-gray-400 transition-transform ${showChat ? 'rotate-90' : '-rotate-90'}`}
+            />
+          </button>
+        )}
+
+        {(showChat || !isMobile) && (
+          <div className={`flex flex-col bg-white ${isMobile ? 'flex-1 min-h-0' : 'border-l border-gray-200 w-80 xl:w-96'}`}>
+            {!isMobile && (
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <span className="text-gray-800 font-semibold text-sm">Live Chat</span>
+                <span className="text-xs text-gray-400">{counts.active} watching</span>
+              </div>
+            )}
+
+            <div className={`flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50 ${isMobile ? 'min-h-0' : ''}`}>
+              {messages.length === 0 && (
+                <p className="text-center text-gray-400 text-sm mt-10">No messages yet. Say hi! 👋</p>
+              )}
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`flex flex-col gap-0.5 ${
+                    m.kind === 'announcement'
+                      ? 'bg-blue-50 rounded-lg px-3 py-2 border border-blue-100'
+                      : ''
+                  }`}
+                >
+                  <span className="text-xs font-semibold text-blue-600">{m.displayName}</span>
+                  <span className="text-sm text-gray-700 break-words">{m.text}</span>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="px-3 py-3 border-t border-gray-100 bg-white flex flex-col gap-1">
+              {chatError && <p className="text-xs text-red-500 px-1">{chatError}</p>}
+              <div className="flex gap-2">
+                <input
+                  value={text}
+                  onChange={(e) => { setText(e.target.value); if (chatError) setChatError(null); }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder="Send a message..."
+                  maxLength={1000}
+                  className="flex-1 text-sm bg-gray-100 border border-gray-200 text-gray-800 rounded-xl px-3 py-2 outline-none focus:border-blue-400 placeholder-gray-400"
+                />
+                <button
+                  onClick={handleSend}
+                  className="h-9 w-9 flex items-center justify-center rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                >
+                  <SendIcon fontSize="small" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <RoomAudioRenderer />
@@ -523,17 +786,25 @@ const InRoom = ({
   const [hostLoading, setHostLoading] = useState(false);
   const isHost = role === 'host';
   const isElevated = isHost || role === 'teacher' || role === 'moderator';
+  const roomStatus = room?.status;
 
   useEffect(() => { join(); }, []);
 
-  // If room becomes live via socket (room:updated) and we don't have a token yet, re-join to get token
-  const roomStatus = room?.status;
+  // If room is live but we have no token, keep retrying join every 2s until we get one
   useEffect(() => {
-    if (roomStatus === 'live' && !livekitToken && !loading) {
-      join();
-    }
+    if (roomStatus !== 'live' || livekitToken || loading) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await joinRoom(roomId, { displayName });
+        if (res.token && res.livekitUrl) {
+          setLivekitCredentials(res.token, res.livekitUrl, res.room, res.session);
+          clearInterval(interval);
+        }
+      } catch {}
+    }, 2000);
+    return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomStatus]);
+  }, [roomStatus, livekitToken, loading]);
 
   const handleLeave = async () => { await leave(); onLeave(); };
 
@@ -561,36 +832,44 @@ const InRoom = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)] bg-gray-950">
-        <div className="text-blue-400 font-semibold animate-pulse">Joining room...</div>
+      <div className="flex items-center justify-center h-[calc(100vh-64px)] bg-gray-50">
+        <div className="text-blue-500 font-semibold animate-pulse">Joining room...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] bg-gray-950 gap-4">
-        <p className="text-red-400 font-medium">{error}</p>
-        <button onClick={onLeave} className="px-4 py-2 bg-gray-800 text-gray-200 rounded-lg text-sm">Go Back</button>
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] bg-gray-50 gap-4">
+        <p className="text-red-500 font-medium">{error}</p>
+        <button onClick={onLeave} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm">Go Back</button>
       </div>
     );
   }
 
   if (!livekitToken || !livekitUrl) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] bg-gray-950 gap-6">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] bg-gray-50 gap-6">
         <div className="text-center">
           <StatusBadge status={room?.status ?? 'draft'} />
-          <p className="text-white font-semibold text-lg mt-3">{room?.title}</p>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-900 font-semibold text-lg mt-3">{room?.title}</p>
+          <p className="text-gray-500 text-sm mt-1">
             {room?.status === 'ended'
               ? 'This session has ended.'
+              : isHost && room?.status === 'live'
+              ? 'Session is live — connecting you...'
               : isHost
               ? 'You are the host. Start the session when ready.'
               : 'Waiting for the host to start the session...'}
           </p>
-          {!isHost && room?.status !== 'ended' && (
-            <p className="text-gray-600 text-xs mt-2">You will be connected automatically when the host goes live.</p>
+          {room?.status === 'live' && !isHost && (
+            <p className="text-gray-400 text-xs mt-2">Connecting automatically...</p>
+          )}
+          {room?.status === 'live' && isHost && (
+            <div className="mt-3 flex items-center justify-center gap-2 text-blue-500 text-sm">
+              <div className="h-3 w-3 rounded-full bg-blue-500 animate-pulse" />
+              Fetching your session token...
+            </div>
           )}
         </div>
         {isHost && room?.status !== 'live' && room?.status !== 'ended' && (
@@ -611,8 +890,8 @@ const InRoom = ({
             <StopIcon fontSize="small" /> {hostLoading ? 'Ending...' : 'End Session'}
           </button>
         )}
-        <button onClick={handleLeave} className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
-          Leave room
+        <button onClick={handleLeave} className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 border border-red-200 hover:border-red-300 hover:bg-red-50 px-4 py-2 rounded-xl transition-colors">
+          <LogoutIcon style={{ fontSize: 15 }} /> Leave room
         </button>
       </div>
     );
@@ -626,9 +905,7 @@ const InRoom = ({
       className="h-[calc(100vh-64px)]"
     >
       <CallUI
-        roomId={roomId}
         room={room}
-        session={session}
         messages={messages}
         reactions={reactions}
         counts={counts}
@@ -647,10 +924,13 @@ const InRoom = ({
 
 const Live = () => {
   const { user, profile } = useAuth();
+  const location = useLocation();
   const [rooms, setRooms] = useState<LiveRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(
+    (location.state as any)?.joinRoomId ?? null
+  );
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
 

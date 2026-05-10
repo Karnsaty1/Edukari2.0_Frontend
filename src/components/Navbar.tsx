@@ -13,8 +13,8 @@ const Navbar = () => {
     { label: 'Courses', to: '/courses' },
     { label: 'Classroom', to: '/classroom' },
     { label: 'Live', to: '/live' },
+    { label: 'Jobs', to: '/jobs' },
     { label: 'Library', to: '/library' },
-    { label: 'Resources', to: '/resources' },
   ];
 
   return (
@@ -29,13 +29,13 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-6">
           {navItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.to}
               className={({ isActive }) =>
-                `text-sm font-medium transition-colors cursor-pointer ${
+                `text-xs lg:text-sm font-medium transition-colors cursor-pointer ${
                   isActive ? 'text-white' : 'text-white/90 hover:text-white'
                 }`
               }

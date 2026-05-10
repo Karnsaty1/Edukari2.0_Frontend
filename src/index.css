@@ -1,7 +1,99 @@
 @import "tailwindcss";
 
+/* ── Reaction float up ───────────────────────────────────────────────────── */
 @keyframes floatUp {
-  0%   { transform: translateY(0);    opacity: 1; }
+  0%   { transform: translateY(0);     opacity: 1; }
   80%  { transform: translateY(-80px); opacity: 0.6; }
   100% { transform: translateY(-120px); opacity: 0; }
+}
+
+/* ── Floating orbs ───────────────────────────────────────────────────────── */
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -40px) scale(1.05); }
+  66%       { transform: translate(-20px, 20px) scale(0.95); }
+}
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(-40px, 30px) scale(1.08); }
+  66%       { transform: translate(25px, -20px) scale(0.92); }
+}
+@keyframes orbFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(20px, 40px) scale(1.06); }
+}
+
+/* ── Shimmer sweep ───────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Fade in up ──────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Fade in ─────────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Pulse glow ──────────────────────────────────────────────────────────── */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+  50%       { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+}
+
+/* ── Gradient shift ──────────────────────────────────────────────────────── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Utility classes ─────────────────────────────────────────────────────── */
+.animate-orb-1 { animation: orbFloat1 12s ease-in-out infinite; }
+.animate-orb-2 { animation: orbFloat2 16s ease-in-out infinite; }
+.animate-orb-3 { animation: orbFloat3 10s ease-in-out infinite; }
+
+.animate-fade-in-up        { animation: fadeInUp 0.6s ease-out both; }
+.animate-fade-in-up-delay1 { animation: fadeInUp 0.6s ease-out 0.1s both; }
+.animate-fade-in-up-delay2 { animation: fadeInUp 0.6s ease-out 0.2s both; }
+.animate-fade-in-up-delay3 { animation: fadeInUp 0.6s ease-out 0.3s both; }
+.animate-fade-in-up-delay4 { animation: fadeInUp 0.6s ease-out 0.4s both; }
+
+.animate-fade-in { animation: fadeIn 0.5s ease-out both; }
+
+.animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 6s ease infinite;
+}
+
+/* ── Shimmer card ────────────────────────────────────────────────────────── */
+.shimmer-card {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.45) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  background-position: -200% center;
+  transition: background-position 0s;
+  pointer-events: none;
+}
+.shimmer-card:hover::after {
+  animation: shimmer 0.7s ease forwards;
 }

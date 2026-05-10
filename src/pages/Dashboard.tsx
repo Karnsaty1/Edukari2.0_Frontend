@@ -29,7 +29,7 @@ const Dashboard = () => {
       } catch {
         if (!active) return;
         setCourses([]);
-        setCourseLoadError('Learning cards will appear once the courses backend is available.');
+        setCourseLoadError('No courses available right now. Please check back later.');
       } finally {
         if (active) setLoadingCourses(false);
       }
@@ -61,7 +61,7 @@ const Dashboard = () => {
       } catch {
         if (!active) return;
         setProgressItems([]);
-        setProgressLoadError('Progress will appear once the backend returns your saved course progress.');
+        setProgressLoadError('Your progress will appear here once you start a course.');
       } finally {
         if (active) setLoadingProgress(false);
       }
@@ -112,10 +112,13 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-blue-50">
-      <section className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white py-[3.6rem] sm:py-[4.5rem] lg:py-[5.4rem]">
+      <section className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white py-[3.6rem] sm:py-[4.5rem] lg:py-[5.4rem] relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Orbs */}
+          <div className="absolute top-[-60px] right-[-60px] w-80 h-80 rounded-full bg-blue-400/20 blur-3xl animate-orb-1 pointer-events-none" />
+          <div className="absolute bottom-[-40px] left-[-40px] w-64 h-64 rounded-full bg-indigo-400/20 blur-3xl animate-orb-2 pointer-events-none" />
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="animate-fade-in-up">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                 Learn Without Limits
               </h1>
@@ -213,7 +216,7 @@ const Dashboard = () => {
                   <Link
                     key={courseKey}
                     to={`/courses/${courseKey}`}
-                    className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-blue-100"
+                    className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-blue-100 shimmer-card animate-fade-in-up"
                   >
                   <div className={`${tone} h-32 flex items-center justify-center`}>
                     <SchoolIcon style={{ fontSize: 60 }} className="text-white" />
@@ -223,7 +226,7 @@ const Dashboard = () => {
                         {course.title}
                       </h3>
                       <div className="mb-2 flex items-center justify-between text-sm text-blue-700">
-                        <span>Progress bar</span>
+                        <span>Progress</span>
                         <span className="font-semibold text-blue-900">{progressPercent}%</span>
                       </div>
                       <div className="w-full bg-blue-100 rounded-full h-2 overflow-hidden">

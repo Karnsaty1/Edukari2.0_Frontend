@@ -26,7 +26,7 @@ const Resources = () => {
       } catch {
         if (!active) return;
         setFeaturedBooks([]);
-        setError('Resource cards will appear once the books backend is available.');
+        setError('Resource cards will appear once more books are added.');
       } finally {
         if (active) setLoading(false);
       }
@@ -40,23 +40,23 @@ const Resources = () => {
 
   const resourceBlocks = [
     {
-      title: 'Trusted Book Platforms',
-      text: 'Use the official site link on each book to reach verified sellers and publishers.',
+      title: 'Trusted Publishers',
+      text: 'Every book links directly to verified sellers and publishers so you always get the real thing.',
       icon: <VerifiedIcon className="text-indigo-600" fontSize="large" />,
     },
     {
       title: 'Reference Collections',
-      text: 'Group reading material by subject, category, or skill level for quicker discovery.',
+      text: 'Browse reading material grouped by subject, category, or skill level for quicker discovery.',
       icon: <LibraryBooksIcon className="text-blue-600" fontSize="large" />,
     },
     {
       title: 'External Learning Links',
-      text: 'Every book card opens to a dedicated page where buyers and learners can continue safely.',
+      text: 'Each book has a dedicated page where you can read more and continue your learning safely.',
       icon: <LanguageIcon className="text-emerald-600" fontSize="large" />,
     },
     {
-      title: 'Student Resource Checklists',
-      text: 'Keep a short list of what to read first, what to buy, and what to explore next.',
+      title: 'Student Reading Checklists',
+      text: 'Keep track of what to read first, what to buy, and what to explore next on your journey.',
       icon: <ChecklistIcon className="text-amber-600" fontSize="large" />,
     },
   ];
@@ -69,8 +69,8 @@ const Resources = () => {
     <div className="min-h-screen bg-blue-50">
       <PageHero
         kicker="Resources"
-        title="Books and reading resources tied to the same live catalog"
-        description="Use the books API to surface trusted reading material, then point users straight to the official site or the book detail page."
+        title="Books and reading resources to support your learning journey"
+        description="Discover curated reading material, explore trusted publishers, and find the right books to complement your courses."
         primaryAction={{ label: 'Open Library', to: '/library' }}
         secondaryAction={{ label: 'Browse Courses', to: '/courses' }}
       />
@@ -154,7 +154,7 @@ const Resources = () => {
                   ))}
                 </div>
                 <p className="mt-6 text-blue-700">
-                  These are pulled from the same books collection, so the resource hub stays consistent with the library.
+                  Browse by category to find books that match your current courses and learning goals.
                 </p>
               </div>
             </div>

@@ -7,7 +7,6 @@ import CourseDetail from './pages/CourseDetail';
 import CourseQuiz from './pages/CourseQuiz';
 import BookDetail from './pages/BookDetail';
 import Library from './pages/Library';
-import Resources from './pages/Resources';
 import Login from './pages/Login';
 import { useAuth } from './modules/auth';
 import { setOnAuthFailure } from './modules/http';
@@ -15,6 +14,8 @@ import { resolveExpiryMs } from './modules/auth/tokenStorage';
 
 const Classroom = lazy(() => import('./pages/Classroom'));
 const Live = lazy(() => import('./pages/Live'));
+const Jobs = lazy(() => import('./pages/Jobs'));
+const LiveJoin = lazy(() => import('./pages/LiveJoin'));
 
 const RouteLoading = ({ label }) => (
   <div className="min-h-[70vh] bg-blue-50 flex items-center justify-center px-6">
@@ -101,6 +102,16 @@ const App = () => {
       <Routes>
         <Route path="/login" element={<PublicOnlyRoute />} />
 
+        {/* Public share link — no auth required */}
+        <Route
+          path="/live/s/:slug"
+          element={
+            <Suspense fallback={<RouteLoading label="Live" />}>
+              <LiveJoin />
+            </Suspense>
+          }
+        />
+
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route element={<SessionWatcher />}>
@@ -118,7 +129,14 @@ const App = () => {
                 }
               />
               <Route path="/library" element={<Library />} />
-              <Route path="/resources" element={<Resources />} />
+              <Route
+                path="/jobs"
+                element={
+                  <Suspense fallback={<RouteLoading label="Jobs" />}>
+                    <Jobs />
+                  </Suspense>
+                }
+              />
               <Route
                 path="/live"
                 element={

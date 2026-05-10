@@ -33,9 +33,12 @@ const PageHero = ({ kicker, title, description, primaryAction, secondaryAction }
   };
 
   return (
-    <section className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white py-[3.6rem] sm:py-[4.5rem] lg:py-[5.4rem]">
+    <section className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white py-[3.6rem] sm:py-[4.5rem] lg:py-[5.4rem] relative overflow-hidden">
+      {/* Orbs */}
+      <div className="absolute top-[-60px] right-[-60px] w-72 h-72 rounded-full bg-blue-400/20 blur-3xl animate-orb-1 pointer-events-none" />
+      <div className="absolute bottom-[-40px] left-[-40px] w-56 h-56 rounded-full bg-indigo-400/20 blur-3xl animate-orb-2 pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
+        <div className="max-w-3xl animate-fade-in-up">
           {kicker ? (
             <div className="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-4 py-2 text-sm font-semibold text-white/90">
               {kicker}

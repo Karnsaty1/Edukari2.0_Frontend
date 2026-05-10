@@ -17,9 +17,9 @@ export const createLiveRoomSchema = yup.object({
     .optional(),
   scheduledStartAt: yup
     .string()
-    .test("is-future", "Scheduled time must be in the future", (val) => {
+    .test("is-future", "Scheduled time must be now or in the future", (val) => {
       if (!val) return true;
-      return new Date(val) > new Date();
+      return new Date(val) >= new Date();
     })
     .nullable()
     .optional(),

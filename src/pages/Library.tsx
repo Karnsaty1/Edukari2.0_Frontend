@@ -34,7 +34,7 @@ const Library = () => {
         if (!active) return;
         setBooks([]);
         setMeta({ page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false });
-        setError('Books are not available yet. The library is ready for the backend contract.');
+        setError('No books available right now. Please check back later.');
       } finally {
         if (active) setLoading(false);
       }
@@ -74,8 +74,8 @@ const Library = () => {
             Library
           </span>
         }
-        title="Books, references, and direct purchase links"
-        description="Browse the live books collection, filter by author or category, and open the official site for each item."
+        title="Books, references, and reading material"
+        description="Browse our curated book collection, filter by author or category, and find the right reading material for your learning journey."
         primaryAction={{ label: 'Browse Books', href: '#books' }}
         secondaryAction={{ label: 'Browse Courses', to: '/courses' }}
       />
@@ -88,7 +88,7 @@ const Library = () => {
             className={`rounded-3xl border p-6 text-left shadow-sm transition-colors ${!category ? 'border-blue-200 bg-white' : 'border-blue-100 bg-blue-50'}`}
           >
             <div className="text-sm font-semibold text-blue-700">All Categories</div>
-            <p className="mt-2 text-sm text-blue-700">Show every available book in the catalog.</p>
+            <p className="mt-2 text-sm text-blue-700">Browse all available books.</p>
           </button>
           {summaries.map((summary) => (
             <button
@@ -98,7 +98,7 @@ const Library = () => {
               className={`rounded-3xl border p-6 text-left shadow-sm transition-colors ${category === summary ? 'border-blue-300 bg-white' : 'border-blue-100 bg-white'}`}
             >
               <div className="text-sm font-semibold text-blue-900">{summary}</div>
-              <p className="mt-2 text-sm text-blue-700">Use this as a quick filter for the collection.</p>
+              <p className="mt-2 text-sm text-blue-700">Filter books by this category.</p>
             </button>
           ))}
         </div>

@@ -15,18 +15,11 @@ const CourseDetail = () => {
   const [error, setError] = useState('');
 
   const resourceLinks = [
-    course?.officialSite ? { label: 'Official site', url: course.officialSite } : null,
     ...(Array.isArray(course?.resources)
-      ? course.resources.map((resource, index) => {
-          if (typeof resource === 'string') {
-            return { label: `Resource ${index + 1}`, url: resource };
-          }
-
-          return {
-            label: resource.label || resource.title || `Resource ${index + 1}`,
-            url: resource.url || resource.href || '',
-          };
-        })
+      ? course.resources.map((resource, index) => ({
+          label: resource.label || resource.title || `Resource ${index + 1}`,
+          url: resource.url || resource.href || '',
+        }))
       : []),
     ...(Array.isArray(course?.links)
       ? course.links.map((resource, index) => ({
@@ -134,7 +127,6 @@ const CourseDetail = () => {
                         className="rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm text-blue-900 hover:bg-blue-50 transition-colors"
                       >
                         <div className="font-semibold">{resource.label}</div>
-                        <div className="mt-1 break-all text-blue-700">{resource.url}</div>
                       </a>
                     ))}
                   </div>
@@ -146,17 +138,8 @@ const CourseDetail = () => {
               <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
                 <div className="text-sm font-semibold text-blue-900">Course Info</div>
                 <div className="mt-4 space-y-2 text-sm text-blue-700">
-                  <p><span className="font-semibold text-blue-900">Slug:</span> {course.slug}</p>
-                  <p className="break-all">
-                    <span className="font-semibold text-blue-900">Official:</span>{' '}
-                    {course.officialSite ? (
-                      <a href={course.officialSite} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 underline">
-                        {course.officialSite}
-                      </a>
-                    ) : (
-                      'Not added yet'
-                    )}
-                  </p>
+                  {course.category && <p><span className="font-semibold text-blue-900">Category:</span> {course.category}</p>}
+                  {course.level && <p><span className="font-semibold text-blue-900">Level:</span> {course.level}</p>}
                 </div>
               </div>
               <Link
@@ -164,7 +147,7 @@ const CourseDetail = () => {
                 className="block rounded-3xl border border-blue-100 bg-white p-6 shadow-sm text-blue-900 hover:bg-blue-50 transition-colors"
               >
                 <div className="font-semibold">Browse more courses</div>
-                <div className="mt-2 text-sm text-blue-700">Return to the paginated list and choose another track.</div>
+                <div className="mt-2 text-sm text-blue-700">Explore other courses in our catalog.</div>
               </Link>
             </aside>
           </div>
