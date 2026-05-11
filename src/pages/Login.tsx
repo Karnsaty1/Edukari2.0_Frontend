@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../modules/auth';
 import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { api } = useAuth();
   const apiBase = import.meta.env.VITE_API_BASE_URL;
   const [mode, setMode] = useState('login');
@@ -51,7 +52,8 @@ const Login = () => {
       } else {
         await api.registerWithPassword({ firstname, lastname, email, password });
       }
-      navigate('/');
+      const next = searchParams.get('next');
+      navigate(next || '/');
     } catch (err) {
       setError(err?.code === 'MISSING_API_BASE_URL' ? 'Server is not configured yet.' : 'Request failed. Please try again.');
     } finally {
@@ -175,7 +177,10 @@ const Login = () => {
                 onSuccess={(res) => {
                   if (res?.credential) {
                     api.loginWithGoogle({ credential: res.credential })
-                      .then(() => navigate('/'))
+                      .then(() => {
+                        const next = searchParams.get('next');
+                        navigate(next || '/');
+                      })
                       .catch(() => setError('Google sign-in failed. Please try again.'));
                   }
                 }}

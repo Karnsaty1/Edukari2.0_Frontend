@@ -25,13 +25,14 @@ const StatusBadge = ({ status }: { status: LiveRoom['status'] }) => {
 const LiveJoin = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { isAuthed } = useAuth();
+  const { isAuthed, isLoading: authLoading } = useAuth();
 
   const [room, setRoom] = useState<LiveRoom | null>(null);
   const [counts, setCounts] = useState<{ activeParticipants: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Load room details
   useEffect(() => {
     if (!slug) return;
     const load = async () => {
@@ -50,6 +51,13 @@ const LiveJoin = () => {
     };
     load();
   }, [slug]);
+
+  // Auto-join when logged in and room is loaded
+  useEffect(() => {
+    if (isAuthed && room && !authLoading && !loading) {
+      navigate(`/live`, { state: { joinRoomId: room.id } });
+    }
+  }, [isAuthed, room, authLoading, loading, navigate]);
 
   const handleJoin = () => {
     if (!isAuthed) {
