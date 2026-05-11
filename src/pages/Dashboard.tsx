@@ -145,23 +145,23 @@ const Dashboard = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="bg-white/10 rounded-xl p-6">
                     <SchoolIcon className="text-yellow-300 mb-2" fontSize="large" />
-                    <div className="text-3xl font-bold">500+</div>
+                    <div className="text-3xl font-bold">{courses.length}+</div>
                     <div className="text-blue-100">Courses</div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-6">
                     <TrendingUpIcon className="text-yellow-300 mb-2" fontSize="large" />
-                    <div className="text-3xl font-bold">50k+</div>
-                    <div className="text-blue-100">Students</div>
+                    <div className="text-3xl font-bold">{progressItems.length}</div>
+                    <div className="text-blue-100">In Progress</div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-6">
                     <EmojiEventsIcon className="text-yellow-300 mb-2" fontSize="large" />
-                    <div className="text-3xl font-bold">95%</div>
-                    <div className="text-blue-100">Success Rate</div>
+                    <div className="text-3xl font-bold">{courses.length > 0 ? '100%' : '0%'}</div>
+                    <div className="text-blue-100">Access</div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-6">
-                    <div className="text-3xl font-bold mb-2">*</div>
-                    <div className="text-3xl font-bold">4.8</div>
-                    <div className="text-blue-100">Rating</div>
+                    <div className="text-3xl font-bold mb-2">★</div>
+                    <div className="text-3xl font-bold">Free</div>
+                    <div className="text-blue-100">For All</div>
                   </div>
                 </div>
               </div>
@@ -173,20 +173,20 @@ const Dashboard = () => {
       <section className="lg:hidden bg-white py-8 border-b">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">500+</div>
+            <div className="text-2xl font-bold text-blue-600">{courses.length}+</div>
             <div className="text-sm text-blue-700">Courses</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">50k+</div>
-            <div className="text-sm text-blue-700">Students</div>
+            <div className="text-2xl font-bold text-blue-600">{progressItems.length}</div>
+            <div className="text-sm text-blue-700">In Progress</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">95%</div>
-            <div className="text-sm text-blue-700">Success</div>
+            <div className="text-2xl font-bold text-blue-600">{courses.length > 0 ? '100%' : '0%'}</div>
+            <div className="text-sm text-blue-700">Access</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">4.8*</div>
-            <div className="text-sm text-blue-700">Rating</div>
+            <div className="text-2xl font-bold text-blue-600">Free</div>
+            <div className="text-sm text-blue-700">For All</div>
           </div>
         </div>
       </section>

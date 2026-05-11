@@ -680,7 +680,7 @@ const CallUI = ({
       </div>
 
       {/* ── Right: Chat panel ── */}
-      <div className={`${isMobile ? `flex flex-col ${showChat ? 'h-[35%]' : 'h-[10%]'}` : 'relative flex'}`}>
+      <div className={`${isMobile ? `flex flex-col ${showChat ? 'h-[35%]' : 'h-auto'}` : 'relative flex'}`}>
         {!isMobile && (
           <button
             onClick={() => setShowChat((v) => !v)}
@@ -694,24 +694,23 @@ const CallUI = ({
           </button>
         )}
 
-        {/* Mobile: collapsible chat header */}
-        {isMobile && (
-          <button
-            onClick={() => setShowChat((v) => !v)}
-            className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-gray-800 font-semibold text-sm">Live Chat</span>
-              <span className="text-xs text-gray-400">{counts.active} watching</span>
-            </div>
-            <ChevronRightIcon
-              style={{ fontSize: 16 }}
-              className={`text-gray-400 transition-transform ${showChat ? 'rotate-90' : '-rotate-90'}`}
-            />
-          </button>
-        )}
+        {/* Chat header - always visible to toggle */}
+        <button
+          onClick={() => setShowChat((v) => !v)}
+          className={`flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 w-full ${isMobile ? '' : 'hidden'}`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-gray-800 font-semibold text-sm">Live Chat</span>
+            <span className="text-xs text-gray-400">{counts.active} watching</span>
+          </div>
+          <ChevronRightIcon
+            style={{ fontSize: 16 }}
+            className={`text-gray-400 transition-transform ${showChat ? 'rotate-90' : '-rotate-90'}`}
+          />
+        </button>
 
-        {(showChat || !isMobile) && (
+        {/* Chat content - only shown when showChat is true */}
+        {showChat && (
           <div className={`flex flex-col bg-white ${isMobile ? 'flex-1 min-h-0' : 'border-l border-gray-200 w-80 xl:w-96'}`}>
             {!isMobile && (
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
