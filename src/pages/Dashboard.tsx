@@ -145,7 +145,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="bg-white/10 rounded-xl p-6">
                     <SchoolIcon className="text-yellow-300 mb-2" fontSize="large" />
-                    <div className="text-3xl font-bold">{courses.length}+</div>
+                    <div className="text-3xl font-bold">19+</div>
                     <div className="text-blue-100">Courses</div>
                   </div>
                   <div className="bg-white/10 rounded-xl p-6">
@@ -173,7 +173,7 @@ const Dashboard = () => {
       <section className="lg:hidden bg-white py-8 border-b">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{courses.length}+</div>
+            <div className="text-2xl font-bold text-blue-600">19+</div>
             <div className="text-sm text-blue-700">Courses</div>
           </div>
           <div className="text-center">

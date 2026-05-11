@@ -571,11 +571,11 @@ const CallUI = ({
         <div className="flex items-center justify-between px-4 py-2.5 bg-white border-t border-gray-200 shadow-sm">
 
           {/* Left: media controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <button
               onClick={toggleMic}
-              title={micOn ? 'Mute' : 'Unmute'}
-              className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-all ${
+              title={micOn ? 'Mute microphone' : 'Unmute microphone'}
+              className={`relative h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center transition-all ${
                 micOn
                   ? isSpeaking
                     ? 'bg-blue-500 text-white'
@@ -586,77 +586,77 @@ const CallUI = ({
               {micOn && isSpeaking && (
                 <span className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-50" />
               )}
-              {micOn ? <MicIcon style={{ fontSize: 18 }} /> : <MicOffIcon style={{ fontSize: 18 }} />}
+              {micOn ? <MicIcon style={{ fontSize: 16 }} /> : <MicOffIcon style={{ fontSize: 16 }} />}
             </button>
 
             <button
               onClick={toggleCam}
-              title={camOn ? 'Stop Video' : 'Start Video'}
-              className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+              title={camOn ? 'Turn off camera' : 'Turn on camera'}
+              className={`h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center transition-colors ${
                 camOn ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' : 'bg-red-500 hover:bg-red-600 text-white'
               }`}
             >
-              {camOn ? <VideocamIcon style={{ fontSize: 18 }} /> : <VideocamOffIcon style={{ fontSize: 18 }} />}
+              {camOn ? <VideocamIcon style={{ fontSize: 16 }} /> : <VideocamOffIcon style={{ fontSize: 16 }} />}
             </button>
 
             <button
               onClick={toggleShare}
-              title={sharing ? 'Stop Share' : 'Share Screen'}
-              className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+              title={sharing ? 'Stop sharing screen' : 'Share screen'}
+              className={`h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center transition-colors ${
                 sharing ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
               }`}
             >
-              {sharing ? <StopScreenShareIcon style={{ fontSize: 18 }} /> : <ScreenShareIcon style={{ fontSize: 18 }} />}
+              {sharing ? <StopScreenShareIcon style={{ fontSize: 16 }} /> : <ScreenShareIcon style={{ fontSize: 16 }} />}
             </button>
 
             <button
               onClick={() => setShowSettings(true)}
               title="Device settings"
-              className="h-9 w-9 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+              className="h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
             >
-              <SettingsIcon style={{ fontSize: 16 }} />
+              <SettingsIcon style={{ fontSize: 14 }} />
             </button>
           </div>
 
           {/* Center: reactions */}
           <button
             onClick={() => setShowReactions((v) => !v)}
-            title="React"
-            className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+            title="Send reaction"
+            className={`h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center transition-colors ${
               showReactions ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
             }`}
           >
-            <EmojiEmotionsIcon style={{ fontSize: 18 }} />
+            <EmojiEmotionsIcon style={{ fontSize: 16 }} />
           </button>
 
           {/* Right: host controls + leave */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             {isHost && room?.status !== 'live' && room?.status !== 'ended' && (
               <button
                 onClick={onGoLive}
                 disabled={hostLoading}
-                title="Go Live"
-                className="h-9 w-9 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                title="Start live stream"
+                className="h-8 w-8 md:h-9 md:w-9 flex items-center justify-center rounded-full bg-green-500 hover:bg-green-600 text-white transition-colors disabled:opacity-50"
               >
-                <PlayArrowIcon style={{ fontSize: 18 }} />
+                <PlayArrowIcon style={{ fontSize: 16 }} />
               </button>
             )}
             {isHost && room?.status === 'live' && (
               <button
                 onClick={onEndLive}
                 disabled={hostLoading}
-                title="End Session"
-                className="h-9 w-9 flex items-center justify-center rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-colors disabled:opacity-50"
+                title="End live stream"
+                className="h-8 w-8 md:h-9 md:w-9 flex items-center justify-center rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-colors disabled:opacity-50"
               >
-                <StopIcon style={{ fontSize: 18 }} />
+                <StopIcon style={{ fontSize: 16 }} />
               </button>
             )}
             <button
               onClick={onLeave}
-              title="Leave"
-              className="h-9 w-9 rounded-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white transition-colors"
+              title="Leave room"
+              className="h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white transition-colors"
             >
-              <LogoutIcon style={{ fontSize: 18 }} />
+              <LogoutIcon style={{ fontSize: 16 }} />
             </button>
           </div>
         </div>
